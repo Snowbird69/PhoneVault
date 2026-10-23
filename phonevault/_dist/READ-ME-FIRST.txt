@@ -1,0 +1,108 @@
+PhoneVault - iPhone and Android backup, message archive and viewer
+==================================================================
+
+What it does
+  Plug in a phone and it backs up. Everything stays on this computer. Messages are
+  kept forever, even after the phone deletes them.
+  iPhone:  messages (incl. voice notes and attachments), contacts, voicemail, voice
+           memos, call history (with encrypted backups), camera-roll photos/videos.
+  Android: texts and picture messages (incl. Google Messages chats), call history,
+           contacts, photos/videos (DCIM, Pictures, Movies), voice recordings
+           (Recordings folder). Works on any Android phone with USB debugging; no root.
+
+INSTALL - WINDOWS 10 / 11
+  0. Optional, avoids the "Windows protected your PC" prompt: BEFORE unzipping,
+     right-click the zip > Properties > tick "Unblock" > OK. (The installer isn't
+     digitally signed, so Windows can't recognise its publisher.)
+     Check it's the file that was sent: in PowerShell
+       Get-FileHash .\PhoneVault-*-setup.zip
+     and compare with the SHA-256 number from the sender (.sha256 file).
+  1. Unzip this whole folder (right-click the zip > Extract All).
+  2. Open the folder and double-click  Install-Windows.cmd
+     - If Windows says "Windows protected your PC": More info > Run anyway.
+     - It installs what's missing: Python 3.13, Apple Devices (Apple's iPhone
+       driver, from the Microsoft Store), FFmpeg and Android platform-tools (adb).
+       Internet is needed.
+     - Takes 3-10 minutes. Keep the black window open until it says Done.
+  3. PhoneVault opens. Choose where to store backups (pick a drive with lots of
+     free space), tick your phone, press Finish.
+  4. Plug in the iPhone, unlock it, tap "Trust" and enter the passcode.
+     Android: turn on USB debugging first (see ANDROID below), then tap "Allow".
+  Start menu and Desktop: "PhoneVault".
+
+INSTALL - LINUX (CachyOS/Arch, Debian/Ubuntu, Fedora; Steam Deck in Desktop Mode)
+  0. Optional check that the zip arrived unchanged (with the .sha256 file next to it):
+       sha256sum -c PhoneVault-*-setup.zip.sha256
+  1. Unzip this folder.
+  2. Open a terminal in the folder and run:   bash install-linux.sh
+     - It asks for your password once to install what's missing: usbmuxd (iPhone),
+       adb + Android USB rules (Android), ffmpeg and imagemagick (media previews).
+     - Steam Deck: system packages are read-only; see "Steam Deck" below.
+  3. PhoneVault opens. Choose where to store backups, tick your phone, Finish.
+  App menu and Desktop: "PhoneVault".
+
+ANDROID - TURN ON USB DEBUGGING (one time per phone)
+  1. Settings > About phone > tap "Build number" 7 times ("You are now a developer").
+     Samsung: Settings > About phone > Software information > Build number.
+     Xiaomi/Redmi/POCO: Settings > About phone > tap "OS version" (or MIUI version).
+  2. Settings > System > Developer options (Samsung: Settings > Developer options)
+     > turn on "USB debugging".
+  3. Plug in, unlock, tap "Allow" on "Allow USB debugging?" and tick "Always allow".
+  4. If asked what the USB connection is for, pick "File transfer".
+  What Android doesn't let other apps read, and the way around it:
+    - Voicemail lives in the carrier/Phone app: save important ones as audio files
+      into the Recordings folder.
+    - Google's Recorder app keeps files private: share them to Recordings.
+    - Samsung chat (RCS) photos, Android 17 end-to-end encrypted RCS, and sent RCS on
+      some recent Google Messages versions: back up with the free "SMS Backup &
+      Restore" app (it can act as the default SMS app), then in PhoneVault:
+      Backups & import > Import SMS Backup & Restore files.
+    - App data (WhatsApp etc.): use the app's own backup.
+  Moving to an Android phone (from iPhone or Android): Restore to phone > Copy to this
+  Android phone. Messages/calls land in Download/PhoneVault; restore them with SMS
+  Backup & Restore. Photos land in DCIM/PhoneVault.
+
+UPDATE
+  Run the installer from the newer zip. Settings and archive are kept.
+
+UNINSTALL
+  Windows: double-click Uninstall-Windows.cmd
+  Linux:   bash uninstall-linux.sh
+  Both keep your settings and your archive folder (delete those yourself if wanted).
+  Windows leaves Python, Apple Devices, FFmpeg and adb installed (remove them in
+  Settings > Apps if nothing else uses them).
+
+WHERE THINGS ARE
+  Program:   Windows %LOCALAPPDATA%\PhoneVault\venv     Linux ~/.venvs/phonevault
+  adb:       Windows winget or %LOCALAPPDATA%\PhoneVault\platform-tools; Linux system package
+  Settings:  Windows %APPDATA%\PhoneVault\config.toml    Linux ~/.config/phonevault/config.toml
+  Logs:      Windows %APPDATA%\PhoneVault\phonevault.log and %LOCALAPPDATA%\PhoneVault\install.log
+             Linux   journalctl --user -u phonevault, and ~/.cache/phonevault-install.log
+  Archive:   the folder you chose at setup
+
+TROUBLESHOOTING
+  Phone not found
+    - Unlock the phone; tap Trust when asked. Try another cable/port (data cable).
+    - Windows: open the Apple Devices app once; it must see the phone too.
+    - Linux: sudo systemctl status usbmuxd   (install the usbmuxd package if missing)
+  Android phone not found
+    - USB debugging on? Phone unlocked? Tapped "Allow"? Try "File transfer" mode.
+    - Windows: install the brand's USB driver (Samsung Android USB Driver from
+      developer.samsung.com; Google USB Driver for Pixel), then replug.
+    - Linux "no permissions": run the installer again (adds Android USB rules), replug.
+    - Huawei phones with HarmonyOS NEXT aren't Android and can't connect.
+  Phone view (QR code) doesn't load on the iPhone
+    - Phone and computer must be on the same Wi-Fi.
+    - Windows: allow Python through Windows Firewall on Private networks.
+    - Linux with ufw:  sudo ufw allow from <your-network>/24 to any port 8738 proto tcp
+  App window opens as a browser tab
+    - It uses Edge/Chrome/Chromium/Brave/Vivaldi for its own window when installed.
+  Steam Deck
+    - The installer works in Desktop Mode, but usbmuxd may not be installed on SteamOS.
+      Community steps to add it (not tested by PhoneVault):  sudo steamos-readonly disable && sudo pacman-key --init &&
+      sudo pacman-key --populate archlinux holo && sudo pacman -S usbmuxd &&
+      sudo steamos-readonly enable    (SteamOS updates can undo this.)
+
+Background music
+  The song in app/phonevault/static/music plays on loop while the app is open
+  (play/pause and volume at the bottom of the sidebar; change it in Settings).

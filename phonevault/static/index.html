@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhoneVault</title>
+<link rel="icon" href="/static/phonevault.svg" type="image/svg+xml">
+<style>
+@font-face { font-family: "Chakra Petch"; font-weight: 500; font-display: swap; src: url(/static/fonts/chakra-petch-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 600; font-display: swap; src: url(/static/fonts/chakra-petch-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 700; font-display: swap; src: url(/static/fonts/chakra-petch-latin-700-normal.woff2) format("woff2"); }
+:root { color-scheme: dark; accent-color: #4fe0f0;
+  --night: #14112a; --deep: #1c1838; --raised: #241f45; --line: #2e2852;
+  --ink: #eeeaff; --haze: #a39dc4; --dim: #6f6995;
+  --sun-a: #ffb36b; --sun-b: #ff4f8b; --sun: linear-gradient(90deg, var(--sun-a), var(--sun-b));
+  --cyan: #4fe0f0; --good: #6be3a4; --warn: #ffc06b; --bad: #ff6b8a;
+  --display: "Chakra Petch", "Noto Sans", system-ui, sans-serif;
+  --body: "Noto Sans", "Inter", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--night); color: var(--ink); font: 14px/1.5 var(--body); display: grid;
+       grid-template-columns: 236px 1fr; overflow: hidden; }
+button, input, select { font: inherit; color: inherit; }
+a { color: var(--cyan); }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: .01em; margin: 0; }
+h2 { font-size: 22px; }
+h3 { font-size: 15px; color: var(--haze); font-weight: 500; margin: 28px 0 10px; }
+.muted { color: var(--haze); }
+
+/* ---------- rail ---------- */
+#rail { background: var(--deep); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 18px 18px 14px; }
+.brand img { width: 30px; height: 30px; }
+.brand b { font-family: var(--display); font-size: 18px; font-weight: 700; }
+#setup { position: fixed; inset: 0; z-index: 40; background: radial-gradient(ellipse at 50% 120%, #3a1d4f 0%, var(--night) 60%); overflow: auto; display: none; }
+#setup.on { display: block; }
+#setup .wrap { max-width: 760px; margin: 0 auto; padding: 48px 24px 64px; }
+#setup h1 { font-family: var(--display); font-size: 34px; margin: 10px 0 4px; }
+#setup .brandrow { display: flex; align-items: center; gap: 14px; }
+#setup .brandrow img { width: 56px; height: 56px; }
+#setup .stepbox { background: var(--deep); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-top: 18px; }
+#setup .stepbox h3 { margin: 0 0 4px; display: flex; gap: 10px; align-items: center; }
+#setup .num { width: 24px; height: 24px; border-radius: 50%; background: var(--sun); color: #1d0f22; display: inline-grid; place-items: center; font-size: 13px; font-weight: 700; }
+#setup .opt { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; margin-top: 8px; cursor: pointer; }
+#setup .opt:has(input:checked) { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan) inset; }
+#setup .opt .p { grid-column: 2; font-size: 12px; color: var(--dim); word-break: break-all; }
+#setup .opt .free { grid-row: 1 / span 2; grid-column: 3; font-size: 12px; color: var(--haze); text-align: right; }
+#su-path { width: 100%; box-sizing: border-box; margin-top: 10px; }
+#su-check { margin: 8px 0 0; font-size: 13px; }
+#su-check.ok { color: var(--cyan); } #su-check.bad { color: var(--sun-b); }
+#su-finish { margin-top: 22px; font-size: 15px; padding: 11px 22px; }
+.help ol { margin: 6px 0 0; padding-left: 20px; color: var(--haze); }
+.help li { margin: 4px 0; }
+.help summary { cursor: pointer; color: var(--cyan); }
+.badge { font-size: 11px; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--line); color: var(--haze); margin-left: 8px; vertical-align: middle; }
+.warnline { color: var(--sun-b); }
+#ra-source { background: var(--deep); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; width: 100%; }
+.music { margin: auto 12px 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; }
+.music button { width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--sun); color: #1d0f22; cursor: pointer; grid-row: 1 / span 2; font-size: 12px; }
+.music .t { font-size: 12px; color: var(--haze); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music input { width: 100%; margin: 0; }
+.phone-chip { margin: 0 12px 10px; padding: 10px 12px; border-radius: 10px; background: var(--raised); }
+.phone-chip select { width: 100%; background: transparent; border: 0; padding: 0; font-weight: 600; cursor: pointer; }
+.phone-chip select option { background: var(--deep); }
+.phone-chip .conn { font-size: 12px; color: var(--haze); display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
+.dot.on { background: var(--good); box-shadow: 0 0 8px var(--good); }
+nav { overflow: auto; padding: 4px 8px 16px; flex: 1; }
+nav .group { font-size: 12px; color: var(--dim); padding: 14px 10px 4px; }
+nav button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px;
+             background: none; color: var(--haze); cursor: pointer; text-align: left; position: relative; }
+nav button svg { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+nav button:hover { color: var(--ink); background: rgba(255,255,255,.03); }
+nav button.on { color: var(--ink); background: var(--raised); }
+nav button.on::before { content: ""; position: absolute; left: -8px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--cyan); }
+nav .tag { margin-left: auto; font-size: 11px; color: var(--dim); }
+nav .count { margin-left: auto; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+/* ---------- main ---------- */
+#main { min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+#jobbar { display: none; align-items: center; gap: 12px; padding: 9px 22px; background: var(--deep); border-bottom: 1px solid var(--line);
+          font-size: 13px; position: relative; overflow: hidden; }
+#jobbar.on { display: flex; }
+#jobbar::after { content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: 30%; background: var(--sun); animation: sweep 1.6s ease-in-out infinite; }
+@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+#jobbar .last { color: var(--haze); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.page { display: none; flex: 1; min-height: 0; overflow: auto; padding: 26px 30px 40px; }
+.page.on { display: block; }
+.page.split.on { display: grid; padding: 0; }
+.pagehead { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.pagehead .grow { flex: 1; }
+
+.btn { border: 1px solid var(--line); background: var(--raised); color: var(--ink); padding: 8px 14px; border-radius: 9px; cursor: pointer;
+       display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.btn:hover { border-color: var(--haze); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--sun); border: 0; color: #1d0f22; font-weight: 600; padding: 9px 16px; }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.ghost { background: transparent; border-color: var(--cyan); color: var(--cyan); }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+input[type=text], input[type=number], input[type=search], input[type=password] { background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+input:focus { border-color: var(--cyan); outline: none; }
+
+/* ---------- overview ---------- */
+.hero { position: relative; border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, #1a1536 0%, #231a45 62%, #14112a 100%);
+        border: 1px solid var(--line); padding: 28px 30px 0; min-height: 270px; display: flex; flex-direction: column; }
+.hero .device { font-family: var(--display); font-size: 40px; font-weight: 700; line-height: 1.05; }
+.hero .sub { color: var(--haze); margin-top: 6px; }
+.hero .actions { display: flex; gap: 10px; margin-top: 20px; position: relative; z-index: 2; flex-wrap: wrap; }
+/* Sunset banner. --s scales it (1.5 on big/fullscreen windows). The grid always rolls;
+   while a job runs it rolls ~30% faster and gold speed streaks fly out from the sun. */
+.horizon { --s: 1; --gold: #ffd36b; position: relative; height: calc(120px * var(--s)); margin: auto -30px 0; padding-top: 22px; }
+.horizon .sun { position: absolute; left: 50%; bottom: calc(52px * var(--s)); width: calc(220px * var(--s)); height: calc(110px * var(--s)); transform: translateX(-50%);
+                border-radius: calc(110px * var(--s)) calc(110px * var(--s)) 0 0;
+                background: linear-gradient(180deg, var(--sun-a), var(--sun-b));
+                -webkit-mask: repeating-linear-gradient(180deg, #000 0 calc(14px * var(--s)), transparent calc(14px * var(--s)) calc(18px * var(--s)));
+                mask: repeating-linear-gradient(180deg, #000 0 calc(14px * var(--s)), transparent calc(14px * var(--s)) calc(18px * var(--s)));
+                opacity: .9; transition: filter .6s; z-index: 1; }
+.horizon .line { position: absolute; left: 0; right: 0; bottom: calc(52px * var(--s)); height: 2px; background: var(--sun); box-shadow: 0 0 18px var(--sun-b); transition: box-shadow .6s; z-index: 1; }
+.horizon .grid { position: absolute; left: -20%; right: -20%; bottom: 0; height: calc(52px * var(--s)); transform-origin: top; transform: perspective(calc(160px * var(--s))) rotateX(55deg);
+                 background-image: linear-gradient(var(--cyan) 1px, transparent 1px), linear-gradient(90deg, var(--cyan) 1px, transparent 1px);
+                 background-size: calc(46px * var(--s)) calc(16px * var(--s)); opacity: .35; animation: roll 1.2s linear infinite; }
+@keyframes roll { from { background-position: 0 0; } to { background-position: 0 calc(16px * var(--s)); } }
+/* gold speed streaks: left half flies left, right half flies right */
+.horizon .speed { position: absolute; left: 0; right: 0; bottom: calc(54px * var(--s)); height: calc(58px * var(--s)); pointer-events: none; opacity: 0; transition: opacity .6s; }
+.horizon .speed::before, .horizon .speed::after { content: ""; position: absolute; top: 0; bottom: 0; width: 50%;
+  background:
+    linear-gradient(90deg, transparent 0 55%, var(--gold) 70%, transparent 100%) 0 18% / calc(150px * var(--s)) 3px repeat-x,
+    linear-gradient(90deg, transparent 0 40%, #ffe9a8 65%, transparent 100%) 0 46% / calc(230px * var(--s)) 2px repeat-x,
+    linear-gradient(90deg, transparent 0 60%, var(--gold) 80%, transparent 100%) 0 72% / calc(120px * var(--s)) 3px repeat-x,
+    linear-gradient(90deg, transparent 0 50%, #ffb84d 75%, transparent 100%) 0 92% / calc(190px * var(--s)) 2px repeat-x; }
+.horizon .speed::before { left: 0; -webkit-mask: linear-gradient(90deg, transparent, #000 25%, #000 60%, transparent 85%); mask: linear-gradient(90deg, transparent, #000 25%, #000 60%, transparent 85%);
+  animation: streak-l .55s linear infinite; }
+.horizon .speed::after { right: 0; -webkit-mask: linear-gradient(270deg, transparent, #000 25%, #000 60%, transparent 85%); mask: linear-gradient(270deg, transparent, #000 25%, #000 60%, transparent 85%);
+  animation: streak-r .55s linear infinite; transform: scaleX(-1); }
+@keyframes streak-l { to { background-position: calc(-150px * var(--s)) 18%, calc(-230px * var(--s)) 46%, calc(-120px * var(--s)) 72%, calc(-190px * var(--s)) 92%; } }
+@keyframes streak-r { to { background-position: calc(-150px * var(--s)) 18%, calc(-230px * var(--s)) 46%, calc(-120px * var(--s)) 72%, calc(-190px * var(--s)) 92%; } }
+body.busy .horizon .grid { animation-duration: .92s; }
+body.busy .horizon .speed { opacity: 1; filter: drop-shadow(0 0 4px rgba(255, 211, 107, .8)); }
+body.busy .horizon .grid { background-image: linear-gradient(var(--gold) 1px, transparent 1px), linear-gradient(90deg, var(--cyan) 1px, transparent 1px); opacity: .5; }
+body.busy .horizon .line { box-shadow: 0 0 18px var(--sun-b), 0 0 30px var(--gold); animation: gold-pulse .92s ease-in-out infinite alternate; }
+body.busy .horizon .sun { filter: drop-shadow(0 0 calc(14px * var(--s)) rgba(255, 211, 107, .55)); }
+@keyframes gold-pulse { from { box-shadow: 0 0 18px var(--sun-b), 0 0 22px rgba(255, 211, 107, .5); } to { box-shadow: 0 0 22px var(--sun-b), 0 0 40px var(--gold); } }
+.hero .actions { margin-bottom: 0; }
+@media (min-width: 1600px) and (min-height: 860px) { .hero { min-height: 405px; } .horizon { --s: 1.5; } }
+.stats { display: grid; grid-template-columns: repeat(6, 1fr); margin-top: 22px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.stat { padding: 14px 16px; border-left: 1px solid var(--line); cursor: pointer; }
+.stat:first-child { border-left: 0; }
+.stat:hover { background: var(--deep); }
+.stat b { display: block; font-family: var(--display); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--haze); font-size: 13px; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+.facts dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; }
+.facts dt { color: var(--haze); }
+.facts dd { margin: 0; }
+.log { background: var(--deep); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font: 12.5px/1.6 "Hack", ui-monospace, monospace;
+       color: var(--haze); white-space: pre-wrap; max-height: 260px; overflow: auto; margin: 0; }
+
+/* ---------- messages ---------- */
+#p-messages { grid-template-columns: 320px 1fr; }
+.chatcol { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; background: var(--deep); }
+.chatcol .top { padding: 14px; border-bottom: 1px solid var(--line); }
+.chatcol input { width: 100%; }
+#chat-list { overflow: auto; flex: 1; }
+.chat { padding: 10px 16px; cursor: pointer; border-bottom: 1px solid rgba(46,40,82,.6); }
+.chat:hover { background: rgba(255,255,255,.025); }
+.chat.on { background: var(--raised); box-shadow: inset 3px 0 var(--cyan); }
+.chat .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat .s { display: flex; justify-content: space-between; color: var(--dim); font-size: 12px; }
+.threadcol { display: flex; flex-direction: column; min-height: 0; }
+.threadhead { display: flex; align-items: center; gap: 10px; padding: 12px 22px; border-bottom: 1px solid var(--line); min-height: 56px; }
+.threadhead h2 { font-size: 18px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#thread { flex: 1; overflow: auto; padding: 18px 24px 30px; display: flex; flex-direction: column; gap: 3px; }
+.day { align-self: center; color: var(--dim); font-size: 12px; margin: 16px 0 6px; font-family: var(--display); }
+.msg { max-width: 66%; display: flex; flex-direction: column; align-items: flex-start; }
+.msg.me { align-self: flex-end; align-items: flex-end; }
+.who { font-size: 12px; color: var(--haze); margin: 8px 10px 2px; }
+.bubble { padding: 8px 13px; border-radius: 17px; background: var(--raised); white-space: pre-wrap; word-break: break-word; }
+.me .bubble { background: linear-gradient(135deg, #ff6b7d, #c84aa8); color: #fff; }
+.att { margin-top: 3px; }
+.att img, .att video { max-width: 320px; max-height: 340px; border-radius: 14px; display: block; cursor: zoom-in; background: var(--deep); }
+.att audio { width: 290px; }
+.att .missing { color: var(--dim); font-size: 12px; font-style: italic; }
+.react { font-size: 13px; margin: -2px 6px 0; }
+.time { font-size: 11px; color: var(--dim); margin: 1px 10px 0; }
+.empty { margin: auto; text-align: center; color: var(--haze); max-width: 380px; }
+.empty h2 { color: var(--ink); margin-bottom: 6px; }
+
+/* ---------- lists ---------- */
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; font-weight: 500; color: var(--haze); font-size: 13px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 9px 10px; border-bottom: 1px solid rgba(46,40,82,.6); vertical-align: middle; }
+tr:hover td { background: rgba(255,255,255,.02); }
+td audio { height: 34px; width: 260px; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--haze); }
+.pill.ok { color: var(--good); border-color: rgba(107,227,164,.4); }
+.pill.bad { color: var(--bad); border-color: rgba(255,107,138,.4); }
+.warn { color: var(--warn); }
+#grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.ph { aspect-ratio: 1; border-radius: 8px; overflow: hidden; position: relative; cursor: zoom-in; background: var(--deep); border: 0; padding: 0; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph .v { position: absolute; right: 6px; bottom: 5px; font-size: 12px; color: #fff; text-shadow: 0 0 4px #000; }
+.panel { background: var(--deep); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.setting { display: grid; grid-template-columns: 1fr auto; gap: 4px 24px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: center; }
+.setting p { margin: 0; color: var(--haze); font-size: 13px; grid-column: 1; }
+.switch { position: relative; width: 44px; height: 24px; border-radius: 99px; background: var(--line); border: 0; cursor: pointer; grid-row: 1 / span 2; grid-column: 2; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--haze); transition: transform .15s; }
+.switch[aria-checked=true] { background: var(--cyan); }
+.switch[aria-checked=true]::after { transform: translateX(20px); background: var(--night); }
+.planned { max-width: 640px; }
+.enc { max-width: 760px; margin-bottom: 22px; }
+.enc h3 { margin: 0 0 6px; }
+.enc .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.enc input[type=password], #rs-confirm { width: 100%; box-sizing: border-box; }
+.check { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; color: var(--haze); }
+.state { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.state i { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); }
+.state.on i { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+.state.off i { background: var(--sun-b); }
+.found.pick { cursor: pointer; grid-template-columns: auto 1fr auto; }
+.found.pick input { grid-row: 1 / span 2; }
+.found.pick .tagline { grid-row: 1 / span 2; grid-column: 3; font-size: 12px; color: var(--haze); text-align: right; }
+.found.pick:has(input:checked) { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan) inset; }
+.btn.danger { background: var(--sun-b); border: 0; color: #1d0f22; font-weight: 600; }
+.call-missed { color: var(--sun-b); }
+@media (max-width: 720px) { .enc .grid2 { grid-template-columns: 1fr; } }
+.planned ol { padding-left: 20px; color: var(--haze); }
+.planned li { margin: 6px 0; }
+.cardlist { display: grid; gap: 8px; }
+.found { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--deep); align-items: center; }
+.found .p { font-size: 12px; color: var(--dim); word-break: break-all; }
+.found .btn { grid-row: 1 / span 2; grid-column: 2; }
+
+#viewer { position: fixed; inset: 0; background: rgba(8,6,20,.92); display: none; align-items: center; justify-content: center; z-index: 20; }
+#viewer.on { display: flex; }
+#viewer img, #viewer video { max-width: 94vw; max-height: 84vh; border-radius: 8px; display: block; }
+.vbox { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.vbar { display: flex; gap: 8px; }
+.att .save { display: inline-block; font-size: 12px; margin: 3px 6px 0; color: var(--cyan); text-decoration: none; }
+.pv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: start; }
+[hidden] { display: none !important; }
+a.btn { text-decoration: none; }
+#pv-qr svg { display: block; border-radius: 14px; box-shadow: 0 0 0 1px var(--line), 0 0 40px rgba(255,79,139,.25); }
+body.ro [data-act], body.ro [data-goto], body.ro .ro-hide, body.ro #nav [data-page=backups], body.ro #nav [data-page=restore],
+body.ro #nav [data-page=phoneview], body.ro #nav [data-page=settings] { display: none !important; }
+@media (max-width: 900px) { .pv { grid-template-columns: 1fr; } }
+#toasts { position: fixed; right: 18px; bottom: 18px; display: grid; gap: 8px; z-index: 30; }
+.toast { background: var(--raised); border: 1px solid var(--line); border-left: 3px solid var(--cyan); padding: 10px 14px; border-radius: 9px; max-width: 380px; }
+.toast.bad { border-left-color: var(--bad); }
+#printout { display: none; }
+@media print {
+  body { display: block; background: #fff; color: #000; overflow: visible; }
+  #rail, #main, #toasts, #viewer { display: none !important; }
+  #printout { display: block; font: 11pt/1.45 var(--body); }
+  #printout h1 { font-size: 16pt; margin-bottom: 4px; }
+  #printout .pm { margin: 4px 0; page-break-inside: avoid; }
+  #printout .pm b { font-weight: 600; }
+  #printout .pd { margin: 14px 0 4px; color: #555; font-weight: 600; }
+  #printout img { max-width: 260px; max-height: 260px; display: block; margin: 3px 0; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::after { animation: none !important; transition: none !important; } }
+@media (max-width: 900px) {
+  body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; } .facts dd { word-break: break-all; }
+  #rail { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  #rail nav { display: flex; padding: 6px; } nav .group, .phone-chip { display: none; }
+  nav button span:not(.tag):not(.count) { display: none; }
+  .stats { grid-template-columns: repeat(3, 1fr); } .facts { grid-template-columns: 1fr; }
+  #p-messages { grid-template-columns: 1fr; } .chatcol { max-height: 40vh; }
+}
+</style>
+</head>
+<body>
+<aside id="rail">
+  <div class="brand"><img src="/static/phonevault.svg" alt=""><b>PhoneVault</b></div>
+  <div class="phone-chip">
+    <select id="device" aria-label="Phone"></select>
+    <div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-text">Checking…</span></div>
+  </div>
+  <nav id="nav">
+    <button data-page="overview" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Overview</span></button>
+    <div class="group">Your phone</div>
+    <button data-page="messages"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Messages</span><span class="count" data-count="messages"></span></button>
+    <button data-page="photos"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg><span>Photos</span><span class="count" data-count="photos"></span></button>
+    <button data-page="voicemail"><svg viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="3.5"/><circle cx="17.5" cy="12" r="3.5"/><path d="M6.5 15.5h11"/></svg><span>Voicemail</span><span class="count" data-count="voicemail"></span></button>
+    <button data-page="memos"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Voice memos</span><span class="count" data-count="memos"></span></button>
+    <button data-page="contacts"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg><span>Contacts</span><span class="count" data-count="contacts"></span></button>
+    <button data-page="calls"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg><span>Call history</span><span class="count" data-count="calls"></span></button>
+    <div class="group ro-hide">Archive</div>
+    <button data-page="backups"><svg viewBox="0 0 24 24"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg><span>Backups &amp; import</span></button>
+    <button data-page="restore"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4"/></svg><span>Restore to phone</span></button>
+    <button data-page="phoneview"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><span>Phone view</span><span class="tag" id="pv-tag"></span></button>
+    <div class="group ro-hide">App</div>
+    <button data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Settings</span></button>
+  </nav>
+  <div class="music ro-hide" id="music" hidden>
+    <button id="mu-play" aria-label="Play background music">▶</button>
+    <span class="t" id="mu-name"></span>
+    <input type="range" id="mu-vol" min="0" max="1" step="0.05" value="0.35" aria-label="Music volume">
+    <audio id="mu-audio" loop preload="none"></audio>
+  </div>
+</aside>
+
+<div id="main">
+  <div id="jobbar"><b id="job-stage"></b><span class="last" id="job-last"></span></div>
+
+  <section class="page on" id="p-overview">
+    <div class="hero">
+      <div class="device" id="ov-name">PhoneVault</div>
+      <div class="sub" id="ov-sub"></div>
+      <div class="actions">
+        <button class="btn primary" data-act="backup">Back up now</button>
+        <button class="btn ghost" data-goto="backups">Import a backup</button>
+        <button class="btn" data-act="photos">Copy new photos</button>
+      </div>
+      <div class="horizon" aria-hidden="true"><div class="sun"></div><div class="speed"></div><div class="line"></div><div class="grid"></div></div>
+    </div>
+    <div class="stats" id="ov-stats"></div>
+    <div class="facts">
+      <div><h3>Archive</h3><dl id="ov-facts"></dl></div>
+      <div><h3>Activity</h3><pre class="log" id="ov-log">Nothing yet.</pre></div>
+    </div>
+  </section>
+
+  <section class="page split" id="p-messages">
+    <div class="chatcol"><div class="top"><input type="search" id="filter" placeholder="Filter chats (Enter searches messages)"></div><div id="chat-list"></div></div>
+    <div class="threadcol">
+      <div class="threadhead"><h2 id="thread-title">Messages</h2><button class="btn small" id="export-chat" disabled>Save as PDF</button></div>
+      <div id="thread"><div class="empty"><h2>Pick a conversation</h2>Everything from your imported backups and plug-in backups, merged into one timeline.</div></div>
+    </div>
+  </section>
+
+  <section class="page" id="p-photos">
+    <div class="pagehead"><h2>Photos</h2><span class="muted" id="ph-note"></span><span class="grow"></span><button class="btn" data-act="photos">Copy new photos</button></div>
+    <div id="grid"></div>
+    <p><button class="btn" id="more-photos" hidden>Show more</button></p>
+  </section>
+
+  <section class="page" id="p-voicemail">
+    <div class="pagehead"><h2>Voicemail</h2></div>
+    <div id="vm-list"></div>
+  </section>
+
+  <section class="page" id="p-memos">
+    <div class="pagehead"><h2>Voice memos</h2></div>
+    <div id="memo-list"></div>
+  </section>
+
+  <section class="page" id="p-contacts">
+    <div class="pagehead"><h2>Contacts</h2><input type="search" id="contact-filter" placeholder="Filter"><span class="grow"></span>
+      <a class="btn" id="vcf" download="contacts.vcf">Export contacts (.vcf)</a></div>
+    <div id="contact-list"></div>
+  </section>
+
+  <section class="page" id="p-calls">
+    <div class="pagehead"><h2>Call history</h2><input type="search" id="call-filter" placeholder="Filter"></div>
+    <div class="panel enc ro-hide" id="enc"></div>
+    <div id="call-list"></div>
+  </section>
+
+  <section class="page" id="p-backups">
+    <div class="pagehead"><h2>Backups &amp; import</h2><span class="grow"></span>
+      <button class="btn primary" data-act="backup">Back up now</button></div>
+    <div class="panel">
+      <h3 style="margin-top:0">Import an existing backup</h3>
+      <p class="muted" style="margin-top:0">Old backups are read, never changed. Messages and attachments are merged into the archive; anything already there is skipped.</p>
+      <div class="row"><button class="btn ghost" id="pick">Choose folder…</button><button class="btn" id="scan">Find backups on this computer</button></div>
+      <div class="row" style="margin-top:10px"><input type="text" id="import-path" placeholder="…or paste a backup folder path" style="flex:1;min-width:260px"><button class="btn" id="import-go">Import</button></div>
+      <div class="cardlist" id="found" style="margin-top:12px"></div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h3 style="margin-top:0">Android</h3>
+      <p class="muted" style="margin-top:0" id="an-status">Android phones back up over USB debugging: texts, picture messages, Google Messages chats, call history, contacts, photos, videos and voice recordings.</p>
+      <details class="help"><summary>Android phone? Turn on USB debugging (one time)</summary>
+        <ol><li>Open <b>Settings › About phone</b> and tap <b>Build number</b> 7 times until it says you're a developer.
+          (Samsung: Settings › About phone › Software information. Xiaomi/Redmi/POCO: tap <b>OS version</b> / MIUI version.)</li>
+          <li>Go back to <b>Settings › System › Developer options</b> (Samsung: Settings › Developer options) and turn on <b>USB debugging</b>.</li>
+          <li>Plug the phone in, unlock it, and tap <b>Allow</b> on "Allow USB debugging?" (tick <b>Always allow from this computer</b>).</li>
+          <li>If the phone asks what the USB connection is for, choose <b>File transfer</b>.</li></ol>
+        <p class="muted" style="margin:6px 0 0">Windows: if the phone still doesn't show, install your brand's USB driver (Samsung: "Samsung Android USB Driver"; Pixel: "Google USB Driver").</p>
+      </details>
+      <div class="row" style="margin-top:12px"><button class="btn ghost" id="an-import">Import SMS Backup &amp; Restore files…</button>
+        <button class="btn" id="an-export">Export this phone's messages for Android</button></div>
+      <p class="muted" style="margin:8px 0 0">Import: for messages Android hides from other apps (Samsung chat photos, end-to-end encrypted RCS), back up with the free SMS Backup &amp; Restore app and import its .xml files here. Export: makes .xml files that SMS Backup &amp; Restore puts onto any Android phone, from an iPhone or Android archive.</p>
+    </div>
+    <p class="muted" id="bk-missing"></p>
+    <h3>Backup runs</h3><div id="runs"></div>
+    <h3>Imported backups</h3><div id="sources"></div>
+    <h3>Activity</h3><pre class="log" id="bk-log">Nothing yet.</pre>
+  </section>
+
+  <section class="page" id="p-restore">
+    <div class="pagehead"><h2>Restore to phone</h2></div>
+    <div class="planned" id="rs-android" style="max-width:760px" hidden>
+      <p class="muted" style="margin-top:0">Copies archived messages, calls and photos onto the plugged-in Android phone. <b>Nothing on the phone is deleted or replaced.</b> The source can be this phone's archive or another phone's, including an iPhone.</p>
+      <ol><li>Messages and calls are copied as SMS Backup &amp; Restore files into the phone's <b>Download/PhoneVault</b> folder. Then, on the phone, install the free <b>SMS Backup &amp; Restore</b> app, choose <b>Restore</b> and pick those files. It asks to be the default SMS app while it restores; switch back afterwards.</li>
+        <li>Photos and videos go into <b>DCIM/PhoneVault</b>. They show in the Gallery/Photos app once the phone has scanned them (restart the phone if they don't appear).</li></ol>
+      <h3>1. Copy from</h3>
+      <select id="ra-source" style="max-width:420px"></select>
+      <h3>2. What to copy</h3>
+      <label class="check"><input type="checkbox" id="ra-msgs" checked> <span>Messages and call history</span></label>
+      <label class="check"><input type="checkbox" id="ra-photos"> <span>Photos and videos</span></label>
+      <div class="row" style="margin-top:14px"><button class="btn primary" id="ra-go">Copy to this Android phone</button></div>
+    </div>
+    <div class="planned" id="rs-ios" style="max-width:760px">
+      <p class="muted" style="margin-top:0">Puts a saved backup back onto the plugged-in iPhone: messages, contacts, settings, call history and app data. <b>It replaces what's on the phone now.</b> Photos that are already copied stay in the archive either way.</p>
+      <ol><li>Before you start: on the iPhone, Settings &gt; your name &gt; Find My &gt; Find My iPhone &gt; Off. iOS refuses a restore while it's on.</li>
+        <li>PhoneVault backs up the phone first and keeps that copy as a dated snapshot, so you can restore back to today.</li>
+        <li>The backup you pick is never changed. The restore reads a temporary working copy.</li>
+        <li>The phone restarts when it's done, then re-downloads apps over Wi-Fi.</li></ol>
+      <h3>1. Pick a backup</h3>
+      <div class="cardlist" id="rs-list"><p class="muted">Loading…</p></div>
+      <h3>2. Options</h3>
+      <label class="check"><input type="checkbox" id="rs-remove"> <span>Also delete things on the phone that aren't in this backup. Leave this off unless you want an exact copy.</span></label>
+      <h3>3. Confirm</h3>
+      <p class="muted" id="rs-phone">Plug in the iPhone.</p>
+      <input type="text" id="rs-confirm" placeholder="Type the phone's name to confirm" autocomplete="off" style="max-width:360px">
+      <div class="row" style="margin-top:14px"><button class="btn danger" id="rs-go" disabled>Restore this backup to the iPhone</button></div>
+    </div>
+  </section>
+
+  <section class="page" id="p-phoneview">
+    <div class="pagehead"><h2>Phone view</h2></div>
+    <div class="pv">
+      <div class="planned">
+        <p class="muted" style="margin-top:0">Opens this archive in your iPhone's browser over home Wi-Fi. Read old threads, play voice notes, and save photos, audio or a chat as PDF onto the phone.</p>
+        <ol><li>Press Start phone view.</li><li>Scan the code with the iPhone camera and tap the link.</li><li>The link is private and read-only, and switches itself off after 30 minutes.</li></ol>
+        <p class="muted">On the phone: tap Save under a picture or recording, or open a chat and tap Save as PDF, then choose Save to Files.</p>
+        <div class="row"><button class="btn primary" id="pv-start">Start phone view</button><button class="btn" id="pv-stop" hidden>Stop now</button></div>
+        <p class="muted" id="pv-left"></p>
+        <p id="pv-url" class="muted" style="word-break:break-all"></p>
+      </div>
+      <div id="pv-qr"></div>
+    </div>
+  </section>
+
+  <section class="page" id="p-settings">
+    <div class="pagehead"><h2>Settings</h2></div>
+    <div class="planned" style="max-width:720px">
+      <div class="setting"><b>Back up when plugged in</b><p>Starts a backup when a listed iPhone is connected.</p><button class="switch" role="switch" id="s-auto" aria-checked="false" aria-label="Back up when plugged in"></button></div>
+      <div class="setting"><b>Start PhoneVault at login</b><p>Runs in the background so plug-in backups work without opening the app.</p><button class="switch" role="switch" id="s-login" aria-checked="false" aria-label="Start at login"></button></div>
+      <div class="setting"><b>Wait between automatic backups</b><p>Skips an automatic backup if the last one is newer than this, so charging doesn't trigger repeats.</p>
+        <span style="grid-row:1/span 2;grid-column:2" class="row"><input type="number" id="s-gap" min="0" step="1" style="width:80px"> hours</span></div>
+      <div class="setting" style="grid-template-columns:1fr"><b>Phones that back up automatically</b><div id="s-devices"></div></div>
+      <div class="setting"><b>Archive folder</b><p>Where backups, attachments and photos are stored. Changing it needs a restart.</p>
+        <input type="text" id="s-archive" style="grid-row:1/span 2;grid-column:2;width:300px"></div>
+      <div class="row" style="margin-top:18px"><button class="btn primary" id="s-save">Save settings</button><button class="btn" id="s-menu">Add to the app menu</button><button class="btn" id="s-desk">Add to the app menu + Desktop</button></div>
+      <div class="setting" style="margin-top:8px"><b>Background music</b><p id="s-music">Plays a song of yours on loop while the app is open.</p>
+        <span style="grid-row:1/span 2;grid-column:2" class="row"><button class="btn" id="s-music-pick">Choose song…</button><button class="btn" id="s-music-bundled" hidden>Use built-in song</button><button class="btn" id="s-music-clear">Turn off</button></span></div>
+    </div>
+  </section>
+</div>
+
+<div id="setup" role="dialog" aria-label="First-time setup">
+  <div class="wrap">
+    <div class="brandrow"><img src="/static/phonevault.svg" alt=""><div><h1>Welcome to PhoneVault</h1>
+      <div class="muted">Three quick choices before the first backup. You can change them later in Settings.</div></div></div>
+    <div class="stepbox">
+      <h3><span class="num">1</span> Where should backups be stored?</h3>
+      <p class="muted" style="margin:0">Pick a drive with plenty of free space. A full backup can need as much space as the phone uses, plus photos.</p>
+      <div id="su-sugg"></div>
+      <div class="row" style="margin-top:10px"><button class="btn ghost" id="su-pick">Choose another folder…</button></div>
+      <input type="text" id="su-path" placeholder="Folder path" autocomplete="off">
+      <p id="su-check"></p>
+    </div>
+    <div class="stepbox">
+      <h3><span class="num">2</span> Which phone backs up automatically when plugged in?</h3>
+      <div id="su-phones"><p class="muted">Plug in the phone and unlock it. iPhone: tap Trust. Android: tap Allow.</p></div>
+      <details class="help" style="margin-top:10px"><summary>Android phone? Turn on USB debugging (one time)</summary>
+        <ol><li>Open <b>Settings › About phone</b> and tap <b>Build number</b> 7 times until it says you're a developer.
+          (Samsung: Settings › About phone › Software information. Xiaomi/Redmi/POCO: tap <b>OS version</b> / MIUI version.)</li>
+          <li>Go back to <b>Settings › System › Developer options</b> (Samsung: Settings › Developer options) and turn on <b>USB debugging</b>.</li>
+          <li>Plug the phone in, unlock it, and tap <b>Allow</b> on "Allow USB debugging?" (tick <b>Always allow from this computer</b>).</li>
+          <li>If the phone asks what the USB connection is for, choose <b>File transfer</b>.</li></ol>
+        <p class="muted" style="margin:6px 0 0">Windows: if the phone still doesn't show, install your brand's USB driver (Samsung: "Samsung Android USB Driver"; Pixel: "Google USB Driver").</p>
+      </details>
+    </div>
+    <div class="stepbox">
+      <h3><span class="num">3</span> Options</h3>
+      <label class="check"><input type="checkbox" id="su-login" checked> <span>Start PhoneVault in the background when I log in (needed for automatic backups)</span></label>
+      <label class="check" id="su-music-row"><input type="checkbox" id="su-music" checked> <span id="su-music-text">Play background music while the app is open</span></label>
+    </div>
+    <button class="btn primary" id="su-finish" disabled>Finish setup</button>
+  </div>
+</div>
+<div id="viewer" role="dialog" aria-label="Media viewer"></div>
+<div id="toasts" aria-live="polite"></div>
+<div id="printout"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const api = async (p, body) => (await fetch(p, body === undefined ? undefined :
+  {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})).json();
+const enc = encodeURIComponent;
+const fmtDay = t => t ? new Date(t * 1000).toLocaleDateString(undefined, {weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'}) : '';
+const fmtShort = t => t ? new Date(t * 1000).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'}) : '';
+const fmtTime = t => new Date(t * 1000).toLocaleTimeString(undefined, {hour: 'numeric', minute: '2-digit'});
+const fmtWhen = t => t ? new Date(t * 1000).toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'}) : '';
+const fmtNum = n => (n ?? 0).toLocaleString();
+const fmtGB = b => b == null ? 'unknown' : (b / 1e12 >= 1 ? (b / 1e12).toFixed(2) + ' TB' : (b / 1e9).toFixed(1) + ' GB');
+const fmtDur = s => s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '';
+function toast(msg, bad) { const t = el('div', 'toast' + (bad ? ' bad' : ''), msg); $('#toasts').appendChild(t); setTimeout(() => t.remove(), 6000); }
+function table(heads, rows) {
+  const t = el('table'), h = el('tr');
+  heads.forEach(x => { const th = el('th', x.num ? 'num' : null, x.label ?? x); h.appendChild(th); });
+  t.appendChild(h); rows.forEach(r => t.appendChild(r)); return t;
+}
+function td(content, cls) { const c = el('td', cls); if (content instanceof Node) c.appendChild(content); else c.textContent = content ?? ''; return c; }
+
+let udid = '', overview = null, chats = [], current = null, photoOffset = 0, page = 'overview';
+
+/* ---------- navigation ---------- */
+function go(name) {
+  page = name;
+  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.page === name));
+  $$('.page').forEach(p => p.classList.toggle('on', p.id === 'p-' + name));
+  ({messages: loadChats, photos: () => loadPhotos(true), voicemail: loadVoicemail, memos: loadMemos,
+    contacts: loadContacts, calls: loadCalls, restore: loadRestore, backups: loadBackups, settings: loadSettings, phoneview: loadPhoneView, overview: refresh})[name]?.();
+}
+$$('#nav button').forEach(b => b.onclick = () => go(b.dataset.page));
+document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) go(g.dataset.goto); });
+
+/* ---------- phone + overview ---------- */
+async function loadDevices() {
+  const devs = await api('/api/devices'), sel = $('#device');
+  sel.innerHTML = '';
+  devs.forEach(d => { const o = el('option', null, d.name || d.udid); o.value = d.udid; o.dataset.platform = d.platform || 'ios'; sel.appendChild(o); });
+  if (!udid && devs.length) udid = devs[0].udid;
+  sel.value = udid;
+  if (!devs.length) { const o = el('option', null, 'No phone yet'); sel.appendChild(o); }
+}
+$('#device').onchange = e => { udid = e.target.value; current = null; go(page); };
+
+async function refresh() {
+  overview = await api('/api/overview?udid=' + enc(udid));
+  const st = overview.state, c = overview.counts || {};
+  document.body.classList.toggle('ro', !!overview.readonly);
+  if (overview.setup === false && !overview.readonly) showSetup();
+  const here = st.connected.find(d => d.udid === udid) || st.connected[0];
+  $('#conn-dot').classList.toggle('on', !!here);
+  const stateText = {unauthorized: 'Tap Allow on the phone', 'no-permission': 'Needs USB permission', offline: 'Not responding'};
+  $('#conn-text').textContent = !here ? 'Not plugged in' :
+    (here.state && here.state !== 'ready') ? `${here.os_label || 'Phone'}: ${stateText[here.state] || here.state}` : `Plugged in, ${here.os_label || 'iOS ' + (here.ios || '?')}`;
+  $('#conn-dot').classList.toggle('on', !!here && (here.state || 'ready') === 'ready');
+  document.body.classList.toggle('busy', st.running);
+  $('#jobbar').classList.toggle('on', st.running);
+  const stageName = {backup: 'Backing up', messages: 'Merging messages', photos: 'Copying photos', import: 'Importing',
+    encrypt: 'Turning on encryption', 'restore-check': 'Checking the backup', 'restore-copy': 'Preparing the restore', restore: 'Restoring'}[st.stage] || 'Working';
+  $('#job-stage').textContent = st.running ? stageName + '…' : '';
+  $('#job-last').textContent = overview.log.at(-1) || '';
+  $$('[data-act]').forEach(b => b.disabled = st.running || !st.connected.length);
+  $$('[data-count]').forEach(s => s.textContent = c[s.dataset.count] ? fmtNum(c[s.dataset.count]) : '');
+
+  const name = $('#device').selectedOptions[0]?.textContent;
+  $('#ov-name').textContent = udid ? name : 'Plug in your iPhone';
+  const lr = overview.last_run;
+  $('#ov-sub').textContent = !udid ? 'Or import a backup you already have.' :
+    st.running ? stageName + ' — keep the phone unlocked and plugged in.' :
+    lr ? `Last backup ${fmtWhen(lr.finished || lr.started)}${lr.status === 'ok' ? '' : ' (failed)'}` : 'No plug-in backup yet.';
+
+  if (page === 'overview') {
+    const stats = $('#ov-stats'); stats.innerHTML = '';
+    [['messages', 'Messages', 'messages'], ['chats', 'Conversations', 'messages'], ['photos', 'Photos & videos', 'photos'],
+     ['voicemail', 'Voicemails', 'voicemail'], ['memos', 'Voice memos', 'memos'], ['contacts', 'Contacts', 'contacts']].forEach(([k, label, target]) => {
+      const s = el('div', 'stat'); s.appendChild(el('b', null, fmtNum(c[k]))); s.appendChild(el('span', null, label));
+      s.onclick = () => go(target); s.tabIndex = 0; stats.appendChild(s); });
+    const f = $('#ov-facts'); f.innerHTML = '';
+    const add = (k, v, cls) => { f.appendChild(el('dt', null, k)); f.appendChild(el('dd', cls, v)); };
+    add('Messages go back to', c.oldest ? fmtShort(c.oldest) : '—');
+    add('Attachments saved', fmtNum(c.attachments));
+    const pend = overview.pending, plugged = st.connected.some(d => d.udid === udid);
+    add('Files that need to be backed up', !pend ? (plugged ? 'Checking…' : 'Plug in the iPhone to check') :
+      `${fmtNum(pend.count)}${pend.count ? ' new photos/videos' : ' — all backed up'} (checked ${fmtTime(pend.checked)})`, pend?.count ? 'warn' : null);
+    add('Folder', overview.archive);
+    add('Free space', fmtGB(overview.free_bytes));
+    add('Auto-backup', overview.auto_backup ? (overview.auto_devices.includes(udid) ? 'On for this phone' : 'Off for this phone') : 'Off');
+    add('Starts at login', overview.autostart ? 'Yes' : 'No');
+    if (lr && lr.note) add('Last run note', lr.note, 'warn');
+    $('#ov-log').textContent = overview.log.join('\n') || 'Nothing yet.';
+  }
+  if (page === 'backups') $('#bk-log').textContent = overview.log.join('\n') || 'Nothing yet.';
+}
+async function act(kind) {
+  const d = overview?.state.connected.find(x => x.udid === udid) || overview?.state.connected[0];
+  if (!d) return toast('Plug the iPhone in first.', true);
+  const r = await api('/api/backup', {udid: d.udid, photos_only: kind === 'photos'});
+  if (!r.ok) return toast(r.error, true);
+  toast(kind === 'photos' ? 'Copying new photos…' : 'Backup started — unlock the phone and enter your passcode if asked.');
+  refresh();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b && !b.disabled) act(b.dataset.act); });
+
+/* ---------- messages ---------- */
+async function loadChats() {
+  chats = udid ? await api('/api/chats?udid=' + enc(udid)) : [];
+  renderChats();
+}
+function renderChats() {
+  const f = $('#filter').value.toLowerCase(), list = $('#chat-list'); list.innerHTML = '';
+  chats.filter(c => c.title.toLowerCase().includes(f)).slice(0, 1500).forEach(c => {
+    const d = el('div', 'chat' + (current === c.guid ? ' on' : '')); d.tabIndex = 0;
+    d.appendChild(el('div', 't', c.title));
+    const s = el('div', 's'); s.appendChild(el('span', null, fmtNum(c.count) + ' messages')); s.appendChild(el('span', null, fmtShort(c.last)));
+    d.appendChild(s);
+    d.onclick = d.onkeydown = e => { if (e.type === 'click' || e.key === 'Enter') openChat(c.guid); };
+    list.appendChild(d);
+  });
+}
+function attNode(a) {
+  const box = el('div', 'att');
+  if (!a.available) { box.appendChild(el('span', 'missing', `${a.name} — not in any backup`)); return box; }
+  const src = `/media/${enc(udid)}/${enc(a.id)}`;
+  if (a.kind === 'image') { const i = el('img'); i.loading = 'lazy'; i.alt = a.name; i.src = src; i.onclick = () => view('img', src); box.appendChild(i); }
+  else if (a.kind === 'video') { const v = el('video'); v.controls = true; v.preload = 'none'; v.src = src; box.appendChild(v); }
+  else if (a.kind === 'audio') { const au = el('audio'); au.controls = true; au.preload = 'none'; au.src = src; box.appendChild(au); }
+  else { const l = el('a', null, a.name); l.href = src; l.download = a.name; box.appendChild(l); return box; }
+  const s = el('a', 'save', 'Save'); s.href = src; s.download = a.name.replace(/\.heic$/i, '.jpg').replace(/\.caf$/i, '.m4a').replace(/\.mov$/i, '.mp4');
+  box.appendChild(s);
+  return box;
+}
+function msgNodes(msgs) {
+  const frag = document.createDocumentFragment(); let lastDay = null, prev = null;
+  for (const m of msgs) {
+    const day = fmtDay(m.date);
+    if (day !== lastDay) { frag.appendChild(el('div', 'day', day)); lastDay = day; prev = null; }
+    const w = el('div', 'msg' + (m.me ? ' me' : ''));
+    if (!m.me && m.sender !== prev) w.appendChild(el('div', 'who', m.sender || ''));
+    prev = m.me ? null : m.sender;
+    if (m.text) w.appendChild(el('div', 'bubble', m.text));
+    m.attachments.forEach(a => w.appendChild(attNode(a)));
+    if (m.reactions.length) w.appendChild(el('div', 'react', m.reactions.join(' ')));
+    w.appendChild(el('div', 'time', fmtTime(m.date)));
+    w.title = fmtWhen(m.date);
+    frag.appendChild(w);
+  }
+  return frag;
+}
+async function openChat(guid, before) {
+  current = guid; renderChats();
+  const c = chats.find(x => x.guid === guid);
+  $('#thread-title').textContent = c ? c.title : 'Messages';
+  $('#export-chat').disabled = false;
+  const t = $('#thread');
+  const msgs = await api(`/api/messages?udid=${enc(udid)}&chat=${enc(guid)}` + (before ? `&before=${before}` : ''));
+  if (!before) t.innerHTML = '';
+  const oldH = t.scrollHeight; $('#older')?.remove();
+  t.prepend(msgNodes(msgs));
+  if (msgs.length >= 300) { const b = el('button', 'btn small', 'Show older messages'); b.id = 'older'; b.style.alignSelf = 'center';
+    b.onclick = () => openChat(guid, msgs[0].date); t.prepend(b); }
+  t.scrollTop = before ? t.scrollHeight - oldH : t.scrollHeight;
+}
+async function searchAll(term) {
+  if (term.trim().length < 2) return;
+  current = null; renderChats();
+  const res = await api(`/api/search?udid=${enc(udid)}&q=${enc(term)}`);
+  const t = $('#thread'); t.innerHTML = '';
+  $('#thread-title').textContent = `${res.length}${res.length === 300 ? '+' : ''} matches for “${term}”`;
+  $('#export-chat').disabled = true;
+  const title = Object.fromEntries(chats.map(c => [c.guid, c.title]));
+  res.forEach(r => { const w = el('div', 'msg' + (r.me ? ' me' : ''));
+    w.appendChild(el('div', 'who', `${title[r.chat] || ''} — ${fmtShort(r.date)}`));
+    w.appendChild(el('div', 'bubble', r.text)); w.style.cursor = 'pointer';
+    w.onclick = () => openChat(r.chat, r.date + 1); t.appendChild(w); });
+}
+$('#filter').oninput = renderChats;
+$('#filter').onkeydown = e => { if (e.key === 'Enter') searchAll(e.target.value); };
+$('#export-chat').onclick = async () => {
+  if (!current) return;
+  toast('Preparing the full conversation…');
+  const msgs = await api(`/api/messages?udid=${enc(udid)}&chat=${enc(current)}&all=1`);
+  const p = $('#printout'); p.innerHTML = '';
+  p.appendChild(el('h1', null, $('#thread-title').textContent));
+  p.appendChild(el('div', null, `${fmtNum(msgs.length)} messages, exported ${fmtWhen(Date.now() / 1000)}`));
+  let lastDay = null;
+  for (const m of msgs) {
+    const day = fmtDay(m.date); if (day !== lastDay) { p.appendChild(el('div', 'pd', day)); lastDay = day; }
+    const d = el('div', 'pm'); d.appendChild(el('b', null, `${m.me ? 'Me' : (m.sender || '')} ${fmtTime(m.date)}: `));
+    d.appendChild(document.createTextNode(m.text || ''));
+    m.attachments.filter(a => a.available && a.kind === 'image').forEach(a => { const i = el('img'); i.src = `/media/${enc(udid)}/${enc(a.id)}?thumb=1`; d.appendChild(i); });
+    m.attachments.filter(a => !(a.available && a.kind === 'image')).forEach(a => d.appendChild(el('div', null, `[${a.kind}: ${a.name}]`)));
+    p.appendChild(d);
+  }
+  await Promise.all([...p.querySelectorAll('img')].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  window.print();
+};
+
+/* ---------- photos ---------- */
+async function loadPhotos(reset) {
+  if (reset) { photoOffset = 0; $('#grid').innerHTML = ''; }
+  const ps = udid ? await api(`/api/photos?udid=${enc(udid)}&offset=${photoOffset}`) : [];
+  photoOffset += ps.length;
+  $('#ph-note').textContent = overview?.counts ? `${fmtNum(overview.counts.photos)} items (${fmtNum(overview.counts.photo_files)} files: Live Photos and edits are grouped)` : '';
+  if (!photoOffset) $('#grid').appendChild(Object.assign(el('div', 'empty'), {innerHTML: '<h2>No photos copied yet</h2>Plug the phone in and press Copy new photos. The first copy takes a while.'}));
+  ps.forEach(p => {
+    const b = el('button', 'ph'); b.title = `${p.name} — ${fmtShort(p.date)}`;
+    const i = el('img'); i.loading = 'lazy'; i.alt = p.name; i.src = `/photo/${enc(udid)}/${p.id}?thumb=1`; b.appendChild(i);
+    if (p.kind === 'video') b.appendChild(el('span', 'v', '▶ video'));
+    else if (p.live) b.appendChild(el('span', 'v', '◎ Live'));
+    b.onclick = () => view(p.kind === 'video' ? 'video' : 'img', `/photo/${enc(udid)}/${p.id}`,
+                           p.live ? `/photo/${enc(udid)}/${p.live}` : null, p.name);
+    $('#grid').appendChild(b);
+  });
+  $('#more-photos').hidden = ps.length < 240;
+}
+$('#more-photos').onclick = () => loadPhotos(false);
+function view(kind, src, liveSrc, name) {
+  const v = $('#viewer'); v.innerHTML = '';
+  const box = el('div', 'vbox');
+  const n = el(kind === 'video' ? 'video' : 'img'); n.src = src; if (kind === 'video') { n.controls = true; n.autoplay = true; }
+  box.appendChild(n);
+  const bar = el('div', 'vbar');
+  if (liveSrc) {
+    const b = el('button', 'btn small', 'Play Live Photo');
+    b.onclick = () => { const vid = el('video'); vid.src = liveSrc; vid.autoplay = true; vid.controls = true;
+      vid.onended = () => { vid.replaceWith(n); b.disabled = false; }; n.replaceWith(vid); b.disabled = true; };
+    bar.appendChild(b);
+  }
+  const save = el('a', 'btn small', 'Save'); save.href = src; save.download = (name || 'photo').replace(/\.heic$/i, '.jpg'); bar.appendChild(save);
+  if (liveSrc) { const s2 = el('a', 'btn small', 'Save Live clip'); s2.href = liveSrc; s2.download = (name || 'live').replace(/\.\w+$/, '.mp4'); bar.appendChild(s2); }
+  box.appendChild(bar);
+  v.appendChild(box); v.classList.add('on');
+}
+$('#viewer').onclick = e => { if (e.target.id === 'viewer') { e.target.classList.remove('on'); e.target.innerHTML = ''; } };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#viewer').classList.remove('on'); $('#viewer').innerHTML = ''; } });
+
+/* ---------- voicemail, memos, contacts ---------- */
+function audioCell(src) { const a = el('audio'); a.controls = true; a.preload = 'none'; a.src = src; return a; }
+function emptyState(box, title, text) { box.innerHTML = ''; const e = el('div', 'empty'); e.appendChild(el('h2', null, title)); e.appendChild(document.createTextNode(text)); box.appendChild(e); }
+async function loadVoicemail() {
+  const rows = udid ? await api('/api/voicemail?udid=' + enc(udid)) : [], box = $('#vm-list');
+  if (!rows.length) return emptyState(box, 'No voicemails yet', currentPlatform() === 'android' ? 'Android keeps voicemail inside the carrier\'s or Phone app, which other apps can\'t read. Save important ones from that app as audio files into Recordings; they\'re backed up from there.' : 'Visual voicemail recordings arrive with the next backup or import.');
+  box.innerHTML = '';
+  box.appendChild(table(['From', 'Received', {label: 'Length', num: 1}, 'Play'], rows.map(r => {
+    const tr = el('tr'); tr.append(td(r.from), td(fmtWhen(r.date)), td(fmtDur(r.duration), 'num'), td(audioCell(`/vm/${enc(udid)}/${enc(r.id)}`))); return tr; })));
+}
+async function loadMemos() {
+  const rows = udid ? await api('/api/memos?udid=' + enc(udid)) : [], box = $('#memo-list');
+  if (!rows.length) return emptyState(box, 'No voice memos found', currentPlatform() === 'android' ? 'Recordings in the phone\'s Recordings folder (Samsung Voice Recorder, most recorder apps) arrive with the next backup. Google\'s Recorder app keeps its files private; share them to the Recordings folder first.' : 'Memos synced only to iCloud aren\'t in phone backups.');
+  box.innerHTML = '';
+  box.appendChild(table(['Recording', 'Recorded', {label: 'Size', num: 1}, 'Play'], rows.map(r => {
+    const tr = el('tr'); tr.append(td(r.name), td(fmtWhen(r.date)), td((r.size / 1e6).toFixed(1) + ' MB', 'num'), td(audioCell(`/memo/${enc(udid)}/${enc(r.name)}`))); return tr; })));
+}
+let contactRows = [];
+async function loadContacts() {
+  contactRows = udid ? await api('/api/contacts?udid=' + enc(udid)) : [];
+  $('#vcf').href = '/api/contacts.vcf?udid=' + enc(udid);
+  renderContacts();
+}
+function renderContacts() {
+  const f = $('#contact-filter').value.toLowerCase(), box = $('#contact-list');
+  const rows = contactRows.filter(p => (p.name + p.values.join(' ')).toLowerCase().includes(f));
+  if (!contactRows.length) return emptyState(box, 'No contacts yet', 'Contacts come from the phone\'s address book in each backup.');
+  box.innerHTML = '';
+  box.appendChild(table(['Name', 'Numbers and emails', {label: 'Messages from them', num: 1}], rows.slice(0, 2000).map(p => {
+    const tr = el('tr'); tr.append(td(p.name), td(p.values.join(', ') || '—', 'muted'), td(fmtNum(p.messages), 'num')); return tr; })));
+}
+$('#contact-filter').oninput = renderContacts;
+
+/* ---------- backups & import ---------- */
+async function loadBackups() {
+  const s = await api('/api/status');
+  $('#runs').innerHTML = ''; $('#sources').innerHTML = '';
+  if (!s.runs.length) $('#runs').appendChild(el('p', 'muted', 'No plug-in backups yet.'));
+  else $('#runs').appendChild(table(['Started', 'Result', {label: 'Messages on phone', num: 1}, {label: 'New messages', num: 1}, {label: 'New photos', num: 1}, 'Note'],
+    s.runs.map(r => { const tr = el('tr'); tr.append(td(fmtWhen(r.started)), td(el('span', 'pill ' + (r.status === 'ok' ? 'ok' : r.status === 'failed' ? 'bad' : ''), r.status)),
+      td(r.messages_on_phone != null ? fmtNum(r.messages_on_phone) : '', 'num'), td(r.new_messages != null ? fmtNum(r.new_messages) : '', 'num'),
+      td(r.new_photos != null ? fmtNum(r.new_photos) : '', 'num'), td(r.note || '', r.note ? 'warn' : null)); return tr; })));
+  if (!s.sources.length) $('#sources').appendChild(el('p', 'muted', 'Nothing imported yet.'));
+  else $('#sources').appendChild(table(['When', 'Folder', {label: 'Messages in it', num: 1}, {label: 'New to archive', num: 1}, {label: 'Attachments copied', num: 1}, {label: 'Missing from backup', num: 1}],
+    s.sources.map(r => { const tr = el('tr'); tr.append(td(fmtWhen(r.imported_at)), td(r.path, 'muted'), td(fmtNum(r.messages_in_source), 'num'), td(fmtNum(r.new_messages), 'num'),
+      td(fmtNum(r.attachments_copied), 'num'), td(fmtNum(r.attachments_missing), 'num')); return tr; })));
+  $('#bk-log').textContent = s.log.join('\n') || 'Nothing yet.';
+  api('/api/android').then(a => { const st = $('#an-status');
+    if (!a.adb) { st.classList.add('warnline'); st.textContent = 'Android support needs Android platform-tools (adb). Run the PhoneVault installer again to add it.'; }
+    else if (a.phones.some(p => p.state !== 'ready')) { st.classList.add('warnline');
+      st.textContent = a.phones.filter(p => p.state !== 'ready').map(p => ({unauthorized: 'Unlock the phone and tap Allow on "Allow USB debugging?"', 'no-permission': 'This computer needs USB permission for the phone: re-run the installer, then replug.', offline: 'The phone isn\'t answering: unplug, unlock, replug.'}[p.state])).join(' '); }
+    else st.classList.remove('warnline'); });
+  const miss = overview?.counts?.attachments_missing;
+  $('#bk-missing').textContent = miss ? `${fmtNum(miss)} older message attachments were never inside any backup (kept only in iCloud or deleted by the phone), so they can't be saved from here.` : '';
+}
+async function startImport(path) {
+  const r = await api('/api/import', {path});
+  if (!r.ok) return toast(r.error, true);
+  toast('Import started. Progress shows in Activity.'); refresh();
+}
+$('#pick').onclick = async () => {
+  toast('A folder picker is opening…');
+  const r = await api('/api/pick-folder', {});
+  if (!r.ok) return toast(r.error, true);
+  $('#import-path').value = r.path; startImport(r.path);
+};
+$('#import-go').onclick = () => startImport($('#import-path').value);
+$('#scan').onclick = async () => {
+  const box = $('#found'); box.innerHTML = ''; box.appendChild(el('p', 'muted', 'Searching your home folder and drives…'));
+  const found = await api('/api/scan'); box.innerHTML = '';
+  if (!found.length) box.appendChild(el('p', 'muted', 'No backups found. Use Choose folder instead.'));
+  found.forEach(f => { const d = el('div', 'found');
+    d.appendChild(el('div', null, `${f.name || 'iPhone'} — iOS ${f.ios || '?'} — ${f.date ? fmtShort(f.date) : 'date unknown'}`));
+    d.appendChild(el('div', 'p', f.path));
+    const b = el('button', 'btn small' + (f.imported ? '' : ' ghost'), f.live ? 'Re-import' : f.imported ? 'Import again' : 'Import');
+    b.onclick = () => startImport(f.path); d.appendChild(b); box.appendChild(d); });
+};
+
+/* ---------- settings ---------- */
+let settings = null;
+async function loadSettings() {
+  settings = await api('/api/settings');
+  $('#s-auto').setAttribute('aria-checked', !!settings.auto_backup);
+  $('#s-login').setAttribute('aria-checked', !!settings.autostart);
+  $('#s-gap').value = settings.min_gap_hours; $('#s-archive').value = settings.archive;
+  const devs = await api('/api/devices'), box = $('#s-devices'); box.innerHTML = '';
+  const known = new Map(devs.map(d => [d.udid, d.name || d.udid]));
+  (overview?.state.connected || []).forEach(d => known.set(d.udid, d.name || d.udid));
+  if (!known.size) box.appendChild(el('p', 'muted', 'Plug in a phone to add it.'));
+  known.forEach((name, id) => { const l = el('label', 'row'); l.style.padding = '4px 0';
+    const c = el('input'); c.type = 'checkbox'; c.value = id; c.checked = settings.devices.includes(id);
+    l.append(c, document.createTextNode(` ${name}`), el('span', 'muted', id)); box.appendChild(l); });
+}
+$('#s-auto').onclick = e => e.currentTarget.setAttribute('aria-checked', e.currentTarget.getAttribute('aria-checked') !== 'true');
+$('#s-login').onclick = async e => {
+  const want = e.currentTarget.getAttribute('aria-checked') !== 'true';
+  const r = await api('/api/autostart', {enabled: want});
+  if (!r.ok) return toast(r.error, true);
+  e.currentTarget.setAttribute('aria-checked', r.enabled);
+  toast(r.enabled ? 'PhoneVault will start at login.' : 'PhoneVault won\'t start at login.');
+};
+$('#s-save').onclick = async () => {
+  const r = await api('/api/settings', {auto_backup: $('#s-auto').getAttribute('aria-checked') === 'true',
+    min_gap_hours: Number($('#s-gap').value), archive: $('#s-archive').value.trim(),
+    devices: $$('#s-devices input:checked').map(c => c.value)});
+  toast(r.ok ? (r.note || 'Settings saved.') : r.error, !r.ok); refresh();
+};
+$('#s-menu').onclick = async () => { const r = await api('/api/menu-entry', {}); toast(r.ok ? 'Added to the app menu.' : r.error, !r.ok); };
+$('#s-desk').onclick = async () => { const r = await api('/api/desktop-icon', {}); toast(r.ok ? 'Added to the app menu and the Desktop.' : r.error, !r.ok); };
+
+/* ---------- first-run setup ---------- */
+let suPoll = null, suOK = null;
+async function showSetup() {
+  if ($('#setup').classList.contains('on')) return;
+  $('#setup').classList.add('on');
+  const info = await api('/api/setup');
+  const box = $('#su-sugg'); box.innerHTML = '';
+  info.suggestions.forEach((s, i) => {
+    const l = el('label', 'opt'); const r = Object.assign(el('input'), {type: 'radio', name: 'su', value: s.path});
+    l.append(r, el('b', null, s.label), el('span', 'free', fmtGB(s.free) + ' free'), el('span', 'p', s.path));
+    r.onchange = () => { $('#su-path').value = s.path; suValidate(); };
+    box.appendChild(l);
+    if (i === 0) { r.checked = true; $('#su-path').value = s.path; }
+  });
+  $('#su-music-text').textContent = info.music.bundled ? `Play background music while the app is open (${info.music.bundled})` : 'Play background music while the app is open';
+  $('#su-music-row').hidden = !info.music.bundled && !info.music.set;
+  suValidate(); suPhones(info.connected);
+  clearInterval(suPoll); suPoll = setInterval(async () => suPhones((await api('/api/overview')).state.connected), 3000);
+}
+function suPhones(list) {
+  const box = $('#su-phones'), was = new Set($$('#su-phones input:not(:checked)').map(c => c.value));
+  if (!list.length) { box.innerHTML = '<p class="muted">Plug in the phone and unlock it. iPhone: tap Trust. Android: turn on USB debugging (below) and tap Allow. You can also do this later in Settings.</p>'; return; }
+  box.innerHTML = '';
+  list.forEach(d => { const l = el('label', 'opt'); const c = Object.assign(el('input'), {type: 'checkbox', value: d.udid, checked: !was.has(d.udid)});
+    const hint = {unauthorized: ' (tap Allow on the phone)', 'no-permission': ' (needs USB permission, see below)', offline: ' (not responding)'}[d.state] || '';
+    l.append(c, el('b', null, (d.name || 'Phone') + hint), el('span', 'free', d.os_label || 'iOS ' + (d.ios || '?')), el('span', 'p', d.udid)); box.appendChild(l); });
+}
+let suTimer = null;
+function suValidate() {
+  clearTimeout(suTimer); $('#su-finish').disabled = true; suOK = null;
+  suTimer = setTimeout(async () => {
+    const r = await api('/api/setup-check', {path: $('#su-path').value.trim()});
+    const c = $('#su-check');
+    if (!r.ok) { c.className = 'bad'; c.textContent = r.error; return; }
+    suOK = r.path; c.className = r.warning ? 'bad' : 'ok';
+    c.textContent = (r.existing ? 'Existing PhoneVault archive found here - it will be used. ' : '') + (r.warning || `${fmtGB(r.free)} free. Looks good.`);
+    $('#su-finish').disabled = false;
+  }, 350);
+}
+$('#su-path').oninput = () => { $$('#su-sugg input').forEach(i => i.checked = false); suValidate(); };
+$('#su-pick').onclick = async () => { toast('A folder picker is opening…'); const r = await api('/api/pick-archive', {});
+  if (r.path) { $('#su-path').value = r.path; $$('#su-sugg input').forEach(i => i.checked = false); suValidate(); } else toast(r.error, true); };
+$('#su-finish').onclick = async () => {
+  if (!suOK) return;
+  $('#su-finish').disabled = true;
+  const r = await api('/api/setup', {archive: suOK, devices: $$('#su-phones input:checked').map(c => c.value),
+    autostart: $('#su-login').checked, music: $('#su-music').checked});
+  if (!r.ok) { $('#su-finish').disabled = false; return toast(r.error, true); }
+  clearInterval(suPoll); $('#setup').classList.remove('on');
+  (r.notes || []).forEach(n => toast(n, true));
+  toast('Setup done. Plug in the iPhone and press Back up now.');
+  await loadDevices(); await refresh(); loadMusic();
+};
+
+/* ---------- background music ---------- */
+const mu = $('#mu-audio');
+const muPref = (k, v) => { try { if (v === undefined) return localStorage.getItem('pv-' + k); localStorage.setItem('pv-' + k, v); } catch (e) { return null; } };
+function muIcon() { $('#mu-play').textContent = mu.paused ? '▶' : '❚❚'; }
+async function loadMusic() {
+  if (overview?.readonly) return;
+  const m = await api('/api/music');
+  $('#music').hidden = !m.set; $('#mu-name').textContent = m.name || '';
+  $('#s-music').textContent = m.set ? `Playing on loop: ${m.name}${m.is_bundled ? ' (built in)' : ''}` : 'Off. Choose a song to play it on loop while the app is open.';
+  $('#s-music-bundled').hidden = !m.bundled || m.is_bundled;
+  if (!m.set) { mu.pause(); mu.removeAttribute('src'); return muIcon(); }
+  mu.src = '/music?v=' + enc(m.name); mu.volume = Number(muPref('vol') ?? 0.35); $('#mu-vol').value = mu.volume;
+  if (muPref('music') !== 'off') {
+    // browsers only allow sound after a click; start on the first one if needed
+    mu.play().catch(() => document.addEventListener('pointerdown', () => mu.paused && muPref('music') !== 'off' && mu.play().then(muIcon), {once: true}));
+  }
+  muIcon();
+}
+$('#mu-play').onclick = e => { e.stopPropagation();
+  if (mu.paused) { muPref('music', 'on'); mu.play().then(muIcon); } else { muPref('music', 'off'); mu.pause(); muIcon(); } };
+mu.onplay = mu.onpause = muIcon;
+$('#mu-vol').oninput = e => { mu.volume = Number(e.target.value); muPref('vol', mu.volume); };
+$('#s-music-pick').onclick = async () => { toast('A file picker is opening…'); const r = await api('/api/pick-music', {});
+  if (!r.ok) return toast(r.error, true); muPref('music', 'on'); await loadMusic(); mu.play().then(muIcon).catch(() => {}); };
+$('#s-music-clear').onclick = async () => { await api('/api/clear-music', {}); loadMusic(); toast('Background music off.'); };
+$('#s-music-bundled').onclick = async () => { await api('/api/bundled-music', {}); muPref('music', 'on'); await loadMusic(); mu.play().then(muIcon).catch(() => {}); };
+
+/* ---------- call history + encrypted backups ---------- */
+let callRows = [];
+async function loadCalls() {
+  callRows = udid ? await api('/api/calls?udid=' + enc(udid)) : [];
+  renderCalls();
+  if (!overview?.readonly) renderEnc(udid ? await api('/api/encryption?udid=' + enc(udid)) : null);
+}
+function renderCalls() {
+  const f = $('#call-filter').value.toLowerCase(), box = $('#call-list');
+  if (!callRows.length) return emptyState(box, 'No calls yet', currentPlatform() === 'android' ? 'Calls arrive with the next backup.' : 'Apple only includes call history in encrypted backups. Turn encryption on above; the next backup fills this list.');
+  const rows = callRows.filter(c => (c.who + ' ' + (c.number || '')).toLowerCase().includes(f));
+  box.innerHTML = '';
+  box.appendChild(table(['Who', 'Number', 'When', 'Direction', 'Type', {label: 'Length', num: 1}], rows.slice(0, 3000).map(c => {
+    const dir = c.outgoing ? 'Outgoing' : c.answered ? 'Incoming' : 'Missed';
+    const tr = el('tr'); tr.append(td(c.who), td(c.number || '', 'muted'), td(fmtWhen(c.date)), td(dir, dir === 'Missed' ? 'call-missed' : null),
+      td(c.kind, 'muted'), td(c.duration ? fmtDur(c.duration) : '', 'num')); return tr; })));
+}
+$('#call-filter').oninput = renderCalls;
+
+function renderEnc(e) {
+  const box = $('#enc'); box.innerHTML = '';
+  if (e && e.platform === 'android') {
+    box.appendChild(el('h3', null, 'Call history'));
+    box.appendChild(el('p', 'muted', 'Android call history is included in every backup. Nothing to set up.'));
+    return;
+  }
+  const plugged = overview?.state.connected.some(d => d.udid === udid);
+  const head = el('div', 'row'); head.appendChild(el('h3', null, 'Encrypted backups'));
+  const st = el('span', 'state'); st.appendChild(el('i'));
+  const on = e?.phone_encrypts;
+  st.classList.add(on ? 'on' : on === false ? 'off' : 'x');
+  st.appendChild(document.createTextNode(on ? 'On' : on === false ? 'Off' : plugged ? 'Checking needs the phone idle' : 'Plug in the phone to check'));
+  head.appendChild(st); box.appendChild(head);
+  box.appendChild(el('p', 'muted', 'Encrypted backups also include call history, saved passwords, Wi-Fi networks and Health data. The password is kept in your computer\'s password vault (KDE Wallet), never in PhoneVault\'s files.'));
+  const vaultBtn = el('button', 'btn small', 'Test password vault');
+  vaultBtn.onclick = async () => { const r = await api('/api/encryption?check=1&udid=' + enc(udid));
+    toast(r.vault.ok ? `Password vault works (${r.vault.backend.split('.').pop()}).` : r.vault.error, !r.vault.ok); };
+  if (!e) { box.appendChild(vaultBtn); return; }
+
+  if (on && e.saved) {
+    box.appendChild(el('p', null, 'Password saved. Every backup is encrypted and PhoneVault reads it automatically.'));
+    const forget = el('button', 'btn small', 'Forget saved password');
+    forget.onclick = async () => { if (!confirm('Remove the saved password from the password vault? Encrypted backups can\'t be read until you add it again.')) return;
+      await api('/api/forget-password', {udid}); toast('Saved password removed.'); loadCalls(); };
+    const r = el('div', 'row'); r.append(vaultBtn, forget); box.appendChild(r); return;
+  }
+  if (on || (on == null && e.latest_backup_encrypted)) {
+    box.appendChild(el('p', null, 'Encryption is already on for this phone. Enter the backup password you set before so PhoneVault can read the backups.'));
+    const pw = Object.assign(el('input'), {type: 'password', placeholder: 'Backup password', autocomplete: 'off'});
+    const go = el('button', 'btn primary', 'Save password');
+    go.onclick = async () => { go.disabled = true; const r = await api('/api/save-password', {udid, password: pw.value}); go.disabled = false;
+      if (!r.ok) return toast(r.error, true); pw.value = '';
+      toast(r.checked ? 'Password checked against your latest backup and saved.' : 'Password saved. It gets checked on the next backup.'); loadCalls(); };
+    const g = el('div', 'grid2'); g.append(pw, el('span')); box.appendChild(g);
+    const r = el('div', 'row'); r.append(go, vaultBtn); box.appendChild(r);
+    box.appendChild(el('p', 'muted', 'Forgot it? On the iPhone: Settings > General > Transfer or Reset iPhone > Reset > Reset All Settings clears it (also resets Wi-Fi and wallpaper; no data deleted). Then turn encryption on here with a new one.'));
+    return;
+  }
+  // off (or unknown and no encrypted backup yet): turn it on
+  const pw = Object.assign(el('input'), {type: 'password', placeholder: 'New backup password (8+ characters)', autocomplete: 'new-password'});
+  const pw2 = Object.assign(el('input'), {type: 'password', placeholder: 'Type it again', autocomplete: 'new-password'});
+  const g = el('div', 'grid2'); g.append(pw, pw2); box.appendChild(g);
+  const ck = el('label', 'check'); const cb = Object.assign(el('input'), {type: 'checkbox'});
+  ck.append(cb, el('span', null, 'I\'ve written this password on paper. Apple can\'t recover it, and without it the encrypted backups can\'t be read or restored.'));
+  box.appendChild(ck);
+  const go = el('button', 'btn primary', 'Turn on encrypted backups');
+  const check = () => go.disabled = !(plugged && pw.value.length >= 8 && pw.value === pw2.value && cb.checked) || overview?.state.running;
+  [pw, pw2, cb].forEach(x => x.oninput = x.onchange = check); check();
+  go.onclick = async () => { go.disabled = true;
+    const r = await api('/api/encrypt', {udid, password: pw.value});
+    if (!r.ok) { check(); return toast(r.error, true); }
+    pw.value = pw2.value = ''; toast('Turning on encryption. Unlock the phone and enter its passcode if it asks.'); };
+  const r = el('div', 'row'); r.append(go, vaultBtn); box.appendChild(r);
+  box.appendChild(el('p', 'muted', plugged ? 'The next backup after this is a full one, so it takes longer once.' : 'Plug in the phone to turn it on.'));
+}
+
+/* ---------- restore ---------- */
+async function loadRestore() {
+  const ph = overview?.state.connected.find(d => d.udid === udid) || overview?.state.connected[0];
+  const isAndroid = ph ? ph.platform === 'android' : currentPlatform() === 'android';
+  $('#rs-android').hidden = !isAndroid; $('#rs-ios').hidden = isAndroid;
+  if (isAndroid) {
+    const devs = await api('/api/devices'), sel = $('#ra-source'); sel.innerHTML = '';
+    devs.forEach(d => { const o = el('option', null, `${d.name || d.udid} (${d.platform === 'android' ? 'Android' : 'iPhone'}, ${fmtNum(d.messages)} messages, ${fmtNum(d.photos)} photos)`); o.value = d.udid; sel.appendChild(o); });
+    if (ph) sel.value = devs.some(d => d.udid === ph.udid) ? ph.udid : sel.value;
+    if (!devs.length) sel.appendChild(el('option', null, 'Nothing archived yet'));
+    $('#ra-go').disabled = !ph || ph.state !== 'ready' || !devs.length;
+    return;
+  }
+  const list = await api('/api/restore-sources'), box = $('#rs-list'); box.innerHTML = '';
+  if (!list.length) box.appendChild(el('p', 'muted', 'No backups yet. Back up or import one first.'));
+  list.forEach((b, i) => {
+    const d = el('label', 'found pick'); const r = Object.assign(el('input'), {type: 'radio', name: 'rs', value: b.path});
+    const locked = b.encrypted && !b.password_saved;
+    r.disabled = locked;
+    d.append(r, el('div', null, `${b.name || 'iPhone'} — iOS ${b.ios || '?'} — ${b.date ? fmtWhen(b.date) : 'date unknown'}`));
+    d.appendChild(el('div', 'tagline', b.where + (b.encrypted ? (locked ? ', encrypted, password not saved' : ', encrypted') : '')));
+    d.appendChild(el('div', 'p', b.path));
+    r.onchange = rsCheck; box.appendChild(d);
+  });
+  rsCheck();
+}
+function rsCheck() {
+  const ph = overview?.state.connected.find(d => d.udid === udid) || overview?.state.connected[0];
+  $('#rs-phone').textContent = ph ? `Type ${ph.name} below (the name shown in Settings > General > About).` : 'Plug in the iPhone.';
+  const pick = $('#rs-list input:checked');
+  $('#rs-go').disabled = !(ph && pick && $('#rs-confirm').value.trim().toLowerCase() === (ph.name || '').trim().toLowerCase()) || overview?.state.running;
+}
+$('#rs-confirm').oninput = rsCheck;
+$('#ra-go').onclick = async () => {
+  const ph = overview?.state.connected.find(d => d.udid === udid) || overview?.state.connected[0];
+  const r = await api('/api/android-restore', {udid: ph?.udid, source: $('#ra-source').value,
+    messages: $('#ra-msgs').checked, photos: $('#ra-photos').checked});
+  if (!r.ok) return toast(r.error, true);
+  toast('Copying to the phone. Progress shows in the activity bar.');
+};
+function currentPlatform() {
+  const opt = $('#device').selectedOptions[0];
+  return opt?.dataset.platform || 'ios';
+}
+$('#an-import').onclick = async () => {
+  toast('A file picker is opening…');
+  const r = await api('/api/pick-xml', {});
+  if (!r.ok) return toast(r.error, true);
+  const target = currentPlatform() === 'android' ? udid : '';
+  const go = await api('/api/android-import', {paths: r.paths, udid: target});
+  if (!go.ok) return toast(go.error, true);
+  toast(target ? 'Importing into this phone\'s archive…' : 'Importing as "Imported Android messages"…'); refresh();
+};
+$('#an-export').onclick = async () => {
+  if (!udid) return toast('Pick a phone first.', true);
+  toast('Exporting… large archives with photos take a while.');
+  const r = await api('/api/export-android', {udid, media: true});
+  toast(r.ok ? `Saved ${r.files.join(' and ')} in ${r.folder}` : r.error, !r.ok);
+};
+$('#rs-go').onclick = async () => {
+  const ph = overview?.state.connected.find(d => d.udid === udid) || overview?.state.connected[0];
+  const r = await api('/api/restore', {udid: ph.udid, source: $('#rs-list input:checked').value,
+    remove: $('#rs-remove').checked, confirm: $('#rs-confirm').value});
+  if (!r.ok) return toast(r.error, true);
+  $('#rs-confirm').value = ''; rsCheck();
+  toast('Restore started: safety backup first, then the restore. Keep the phone plugged in and unlocked.');
+};
+
+
+/* ---------- phone view ---------- */
+let pvTimer = null;
+function renderPhoneView(s) {
+  $('#pv-start').hidden = s.on; $('#pv-stop').hidden = !s.on;
+  $('#pv-tag').textContent = s.on ? 'on' : '';
+  $('#pv-qr').innerHTML = s.on && s.qr_svg ? s.qr_svg : '';
+  $('#pv-url').textContent = s.on ? s.url : '';
+  $('#pv-left').textContent = s.on ? `Switches off in ${Math.ceil(s.seconds_left / 60)} min. Phone and computer must be on the same Wi-Fi.` : '';
+}
+async function loadPhoneView() {
+  renderPhoneView(await api('/api/phoneview'));
+  clearInterval(pvTimer);
+  pvTimer = setInterval(async () => { if (page !== 'phoneview') return clearInterval(pvTimer); renderPhoneView(await api('/api/phoneview')); }, 15000);
+}
+$('#pv-start').onclick = async () => { const s = await api('/api/phoneview', {on: true}); renderPhoneView(s); if (s.on) toast('Phone view is on. Scan the code with your iPhone.'); };
+$('#pv-stop').onclick = async () => { renderPhoneView(await api('/api/phoneview', {on: false})); toast('Phone view is off.'); };
+
+/* ---------- start ---------- */
+(async () => { await loadDevices(); await refresh(); loadMusic(); setInterval(async () => {
+  const was = overview?.state.running; await refresh();
+  if (was && !overview.state.running) { await loadDevices(); if (['backups', 'calls', 'restore'].includes(page)) go(page); toast(overview.log.at(-1) || 'Finished.'); }
+}, 3000); })();
+</script>
+</body>
+</html>

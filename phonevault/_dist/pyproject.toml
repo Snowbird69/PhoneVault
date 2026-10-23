@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phonevault"
+version = "0.6.0"
+description = "Plug-in iPhone and Android backup, message archive and viewer for Windows and Linux"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+dependencies = ["pymobiledevice3==11.43.1", "segno>=1.6", "keyring>=25", "packaging", "pillow-heif>=0.18"]
+
+[project.scripts]
+phonevault = "phonevault.cli:main"
+
+[tool.setuptools]
+packages = ["phonevault"]
+
+[tool.setuptools.package-data]
+phonevault = ["static/*", "static/fonts/*", "static/icons/*", "static/music/*", "_dist/*"]
